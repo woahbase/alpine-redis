@@ -1,0 +1,22 @@
+ARG ARCH=frommakefile
+ARG DOCKERSRC=frommakefile
+ARG USERNAME=frommakefile
+#
+FROM ${USERNAME}/${DOCKERSRC}:${ARCH}
+#
+ARG PUID=1001
+ARG PGID=1001
+#
+RUN set -xe \
+    && addgroup -g ${PGID} -S redis \
+    && adduser -u ${PUID} -G redis -h /var/lib/redis/ -D redis \
+    && apk add --no-cache --purge -uU redis \
+    && rm -rf /var/cache/apk/* /tmp/* /etc/redis.conf
+#
+COPY root/ /
+#
+VOLUME /var/lib/redis/
+#
+EXPOSE 6379
+#
+ENTRYPOINT ["/init"]
