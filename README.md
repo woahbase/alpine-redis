@@ -48,6 +48,9 @@ docker run --rm --privileged multiarch/qemu-user-static:register --reset
 Without the above, you can still run the image that is made for your
 architecture, e.g for an x86_64 machine..
 
+Mount your own configurations file at `/etc/redis.conf`, otherwise
+a default is provided.
+
 ```
 # make
 docker run --rm -it \
