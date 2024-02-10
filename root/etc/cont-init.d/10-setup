@@ -1,4 +1,0 @@
-#!/usr/bin/with-contenv bash
-
-[[ ! -f /etc/redis.conf ]] && cp /defaults/redis.conf /etc/redis.conf;
-

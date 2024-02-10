@@ -1,0 +1,13 @@
+#!/usr/bin/with-contenv bash
+set -e
+
+REDIS_HOME="${REDIS_HOME:-/var/lib/redis}";
+
+cd ${REDIS_HOME} || exit 1;
+
+REDIS_ARGS="${REDIS_ARGS:- /etc/redis.conf}"
+
+s6-setuidgid ${S6_USER:-alpine} exec \
+    redis-server \
+    ${REDIS_ARGS} \
+    ;

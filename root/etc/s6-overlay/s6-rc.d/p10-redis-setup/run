@@ -1,0 +1,25 @@
+#!/usr/bin/with-contenv bash
+set -e
+
+REDIS_HOME="${REDIS_HOME:-/var/lib/redis}";
+REDIS_LOGS="${REDIS_LOGS:-/var/log/redis}";
+
+# setup directories
+mkdir -p \
+    "${REDIS_HOME}" \
+    "${REDIS_LOGS}" \
+    ;
+
+# ensure redis conf exists
+if [ ! -f /etc/redis.conf ];
+then
+    cp /defaults/redis.conf /etc/redis.conf;
+fi;
+
+touch /var/run/redis.pid;
+
+chown -R ${S6_USER:-alpine} \
+    "${REDIS_HOME}" \
+    "${REDIS_LOGS}" \
+    /var/run/redis.pid \
+    ;
