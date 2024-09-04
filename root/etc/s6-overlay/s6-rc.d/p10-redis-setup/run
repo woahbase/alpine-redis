@@ -1,25 +1,66 @@
 #!/usr/bin/with-contenv bash
 set -e
 
-REDIS_HOME="${REDIS_HOME:-/var/lib/redis}";
-REDIS_LOGS="${REDIS_LOGS:-/var/log/redis}";
+vecho () { if [ "${S6_VERBOSITY:-1}" -gt 0 ]; then echo "[$0] $@"; fi; }
+
+REDIS_CONF="${REDIS_CONF:-/etc/redis.conf}";
+REDIS__dir="${REDIS__dir:-/var/lib/redis}";
 
 # setup directories
+vecho "Ensure configuration directories exist.";
 mkdir -p \
-    "${REDIS_HOME}" \
-    "${REDIS_LOGS}" \
+    $(dirname ${REDIS_CONF}) \
+    "${REDIS__dir}" \
     ;
 
 # ensure redis conf exists
-if [ ! -f /etc/redis.conf ];
+if [ ! -f "${REDIS_CONF}" ];
 then
-    cp /defaults/redis.conf /etc/redis.conf;
+    vecho "Setting up default configuration as ${REDIS_CONF}";
+    cp /defaults/redis.conf ${REDIS_CONF};
+
+    # update redis configuration from environment vars i.e. /run/s6/container_environment/REDIS__<varname> (double underscores)
+    # only if custom configuration does not exist
+    if find /run/s6/container_environment/REDIS__* -maxdepth 1 > /dev/null 2>&1; then
+        for FILENAME in /run/s6/container_environment/*;
+        do
+            if [[ "${FILENAME##*/}" == "REDIS__"* ]];
+            then
+                BASENAME="${FILENAME##*/}";
+                VAR=${BASENAME//REDIS__/};
+                VAL="$(cat ${FILENAME})";
+                sed -i -e "s|^#\? \?${VAR} .*\$|$VAR $VAL|" ${REDIS_CONF};
+                echo "Set ${VAR} from ${BASENAME} in ${REDIS_CONF}";
+            fi;
+        done;
+    fi;
 fi;
 
-touch /var/run/redis.pid;
+# REDIS__logfile="${REDIS__logfile:-}";
+# ensure logfile exists if logfile is set e.g "/var/log/redis/redis_6379.log"
+if [ -n "${REDIS__logfile}" ] \
+&& [ ! -f "${REDIS__logfile}" ];
+then
+    fp="${REDIS__logfile}";
+    vecho "Ensure logfile exists: $fp";
+    mkdir -p $(dirname $fp);
+    touch $fp;
+    chown -R ${S6_USER:-alpine}:${S6_USER:-alpine} \
+        $(dirname $fp) \
+        $fp \
+        ;
+fi;
 
-chown -R ${S6_USER:-alpine} \
-    "${REDIS_HOME}" \
-    "${REDIS_LOGS}" \
-    /var/run/redis.pid \
+REDIS__pidfile="${REDIS__pidfile:-/var/run/redis.pid}";
+if [ ! -f "${REDIS__pidfile}" ];
+then
+    vecho "Ensure redis pid-file exists: ${REDIS__pidfile}";
+    touch ${REDIS__pidfile};
+fi;
+
+vecho "Fixing permissions.";
+chown -R ${S6_USER:-alpine}:${S6_USER:-alpine} \
+    "${REDIS_CONF}" \
+    "${REDIS__dir}" \
+    "${REDIS__pidfile}" \
     ;
