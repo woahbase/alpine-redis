@@ -1,5 +1,6 @@
 #!/usr/bin/with-contenv bash
 set -e
+usercmd () { if [ "X${EUID}" != "X0" ]; then $@; else s6-setuidgid ${PUID:-1000}:${PGID:-1000} $@; fi; }
 
 REDIS_CONF="${REDIS_CONF:-/etc/redis.conf}";
 REDIS__dir="${REDIS__dir:-/var/lib/redis}";
@@ -8,7 +9,7 @@ cd ${REDIS__dir} || exit 1;
 
 REDIS_ARGS="${REDIS_ARGS:- $REDIS_CONF}"
 
-s6-setuidgid ${S6_USER:-alpine} \
+usercmd \
 exec \
     redis-server \
     ${REDIS_ARGS} \

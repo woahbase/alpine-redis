@@ -5,8 +5,11 @@ ARG IMAGEBASE=frommakefile
 FROM ${IMAGEBASE}
 #
 RUN set -xe \
-    && apk add --no-cache --purge -uU redis \
-    && rm -rf /var/cache/apk/* /tmp/* /etc/redis.conf
+    && apk add --no-cache --purge -uU \
+        redis \
+    && mkdir -p /defaults/ \
+    && mv /etc/redis.conf /defaults/redis.conf.default \
+    && rm -rf /var/cache/apk/* /tmp/*
 #
 COPY root/ /
 #

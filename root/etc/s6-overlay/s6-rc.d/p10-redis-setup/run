@@ -42,13 +42,16 @@ if [ -n "${REDIS__logfile}" ] \
 && [ ! -f "${REDIS__logfile}" ];
 then
     fp="${REDIS__logfile}";
-    vecho "Ensure logfile exists: $fp";
+    vecho "Ensure logfile exists: ${fp}";
     mkdir -p $(dirname $fp);
     touch $fp;
-    chown -R ${S6_USER:-alpine}:${S6_USER:-alpine} \
-        $(dirname $fp) \
-        $fp \
-        ;
+    if [ "X${EUID}" == "X0" ]; # requires root
+    then
+        chown -R ${S6_USER:-alpine}:${PGID:-1000} \
+            $(dirname $fp) \
+            $fp \
+            ;
+    fi;
 fi;
 
 REDIS__pidfile="${REDIS__pidfile:-/var/run/redis.pid}";
@@ -58,9 +61,14 @@ then
     touch ${REDIS__pidfile};
 fi;
 
-vecho "Fixing permissions.";
-chown -R ${S6_USER:-alpine}:${S6_USER:-alpine} \
-    "${REDIS_CONF}" \
-    "${REDIS__dir}" \
-    "${REDIS__pidfile}" \
-    ;
+# fix permissions
+if [ -z "${REDIS_SKIP_PERMFIX}" ] \
+&& [ "X${EUID}" == "X0" ]; # requires root
+then
+    vecho "Fixing permissions.";
+    chown -R ${S6_USER:-alpine}:${PGID:-1000} \
+        "${REDIS_CONF}" \
+        "${REDIS__dir}" \
+        "${REDIS__pidfile}" \
+        ;
+fi;
