@@ -1,6 +1,7 @@
 #!/usr/bin/with-contenv bash
 set -e
-usercmd () { if [ "X${EUID}" != "X0" ]; then $@; else s6-setuidgid ${PUID:-1000}:${PGID:-1000} $@; fi; }
+
+usercmd () { if [ "X${EUID}" != "X0" ]; then ${1} "${@:2}"; else s6-setuidgid ${PUID:-1000}:${PGID:-1000} ${1} "${@:2}"; fi; }
 
 REDIS_CONF="${REDIS_CONF:-/etc/redis.conf}";
 REDIS__dir="${REDIS__dir:-/var/lib/redis}";
